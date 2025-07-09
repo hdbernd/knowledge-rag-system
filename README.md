@@ -32,6 +32,15 @@ cd knowledge-rag
 ./start_ui.sh
 ```
 
+### 3. Quick Launch Scripts
+```bash
+# Terminal UI (interactive chat) - auto-initializes RAG system
+./run_term
+
+# Web UI (browser interface) - auto-initializes RAG system
+./run_ui
+```
+
 **That's it!** The script will:
 - Install Ollama if needed
 - Create virtual environment
@@ -131,7 +140,9 @@ python knowledge_rag.py --model phi3:mini --query "Your question"
 
 ### 🎯 Terminal UI (Recommended)
 ```bash
-./start_ui.sh  # Quick launcher
+./run_term     # Quick launcher (recommended) - auto-initializes RAG
+# OR
+./start_ui.sh  # Original launcher
 # OR
 python ui.py   # Manual start
 ```
@@ -144,6 +155,7 @@ python ui.py   # Manual start
 - Conversational context memory
 - Clear chat history option
 - Colored, user-friendly interface
+- **Auto-initialization**: RAG system ready immediately
 
 **Main Menu:**
 ```
@@ -170,7 +182,9 @@ python ui.py   # Manual start
 
 ### 🌐 Web Interface
 ```bash
-streamlit run streamlit_app.py
+./run_ui       # Quick launcher (recommended) - auto-initializes RAG
+# OR
+streamlit run streamlit_app.py  # Manual start
 # Opens at http://localhost:8501
 ```
 
@@ -179,6 +193,7 @@ streamlit run streamlit_app.py
 - Sidebar with system controls
 - Real-time status indicators
 - Easy document management
+- **Auto-initialization**: RAG system ready immediately
 
 ### 💻 Command Line Interface
 ```bash
