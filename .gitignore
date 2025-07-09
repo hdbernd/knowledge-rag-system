@@ -1,0 +1,271 @@
+# Knowledge RAG System - Git Ignore File
+
+# ==============================================================================
+# USER DOCUMENTS (IMPORTANT: Keep your private documents out of the repo)
+# ==============================================================================
+documents/
+!documents/.gitkeep
+!documents/sample_ai_info.txt
+!documents/programming_basics.md
+
+# ==============================================================================
+# VECTOR DATABASE & INDEXES
+# ==============================================================================
+chroma_db/
+*.db
+*.sqlite
+*.sqlite3
+chromadb.log
+
+# ==============================================================================
+# PYTHON
+# ==============================================================================
+# Virtual Environment
+venv/
+env/
+.env
+.venv
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ==============================================================================
+# OPERATING SYSTEM
+# ==============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==============================================================================
+# EDITORS & IDEs
+# ==============================================================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+!*.svg
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+Session.vim
+Sessionx.vim
+.netrwhist
+*~
+tags
+[._]*.un~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ==============================================================================
+# LOGS & TEMPORARY FILES
+# ==============================================================================
+*.log
+*.out
+*.pid
+*.seed
+*.pid.lock
+logs/
+temp/
+tmp/
+.tmp/
+
+# ==============================================================================
+# STREAMLIT
+# ==============================================================================
+.streamlit/
+
+# ==============================================================================
+# MODEL CACHE & DOWNLOADS
+# ==============================================================================
+# Sentence Transformers cache
+.cache/
+models/
+model_cache/
+
+# Hugging Face cache
+.huggingface/
+
+# ==============================================================================
+# CONFIGURATION & SECRETS
+# ==============================================================================
+config.json
+secrets.json
+.secrets
+*.key
+*.pem
+*.p12
+
+# ==============================================================================
+# DOCUMENTATION BUILD
+# ==============================================================================
+docs/_build/
+site/
+
+# ==============================================================================
+# BACKUP FILES
+# ==============================================================================
+*.bak
+*.backup
+*.orig
+*.save
+
+# ==============================================================================
+# CUSTOM USER ADDITIONS
+# ==============================================================================
+# Add your custom ignore patterns below this line
+# Example:
+# my_personal_notes/
+# custom_configs/
