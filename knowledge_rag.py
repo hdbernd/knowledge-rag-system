@@ -16,6 +16,8 @@ import ollama
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 import json
+import hashlib
+import time
 
 class KnowledgeRAG:
     def __init__(self, documents_dir: str = "documents", model_name: str = "llama3.1:8b"):
@@ -39,6 +41,9 @@ class KnowledgeRAG:
             name="knowledge_base",
             metadata={"hnsw:space": "cosine"}
         )
+        
+        # File for tracking document states
+        self.index_state_file = Path("chroma_db/index_state.json")
         
     def load_documents(self) -> List[Document]:
         """Load and process documents from the documents directory."""
@@ -66,6 +71,196 @@ class KnowledgeRAG:
                     print(f"Error loading {file_path}: {e}")
                     
         return documents
+    
+    def _get_file_hash(self, file_path: Path) -> str:
+        """Get SHA256 hash of file contents."""
+        try:
+            with open(file_path, 'rb') as f:
+                return hashlib.sha256(f.read()).hexdigest()
+        except Exception:
+            return ""
+    
+    def _load_index_state(self) -> Dict[str, Dict[str, Any]]:
+        """Load the current index state from file."""
+        if not self.index_state_file.exists():
+            return {}
+        try:
+            with open(self.index_state_file, 'r') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    
+    def _save_index_state(self, state: Dict[str, Dict[str, Any]]):
+        """Save the current index state to file."""
+        # Ensure directory exists
+        self.index_state_file.parent.mkdir(exist_ok=True)
+        try:
+            with open(self.index_state_file, 'w') as f:
+                json.dump(state, f, indent=2)
+        except Exception as e:
+            print(f"Warning: Could not save index state: {e}")
+    
+    def _get_files_to_process(self) -> tuple[List[Document], List[str]]:
+        """Get files that need to be processed (new or modified)."""
+        current_state = self._load_index_state()
+        files_to_process = []
+        files_to_remove = []
+        new_state = {}
+        
+        # Check existing files
+        supported_extensions = ['.txt', '.md', '.py', '.js', '.json', '.csv']
+        
+        if self.documents_dir.exists():
+            for file_path in self.documents_dir.rglob('*'):
+                if file_path.is_file() and file_path.suffix.lower() in supported_extensions:
+                    file_key = str(file_path.relative_to(self.documents_dir))
+                    current_hash = self._get_file_hash(file_path)
+                    current_mtime = file_path.stat().st_mtime
+                    
+                    # Check if file is new or modified
+                    if file_key not in current_state or \
+                       current_state[file_key]['hash'] != current_hash or \
+                       current_state[file_key]['mtime'] != current_mtime:
+                        
+                        try:
+                            with open(file_path, 'r', encoding='utf-8') as f:
+                                content = f.read()
+                                doc = Document(
+                                    page_content=content,
+                                    metadata={"source": str(file_path)}
+                                )
+                                files_to_process.append(doc)
+                                print(f"Will process: {file_path}")
+                        except Exception as e:
+                            print(f"Error loading {file_path}: {e}")
+                            continue
+                    
+                    # Update state for this file
+                    new_state[file_key] = {
+                        'hash': current_hash,
+                        'mtime': current_mtime,
+                        'size': file_path.stat().st_size
+                    }
+        
+        # Check for deleted files
+        for file_key in current_state:
+            if file_key not in new_state:
+                files_to_remove.append(file_key)
+                print(f"Will remove: {file_key}")
+        
+        # Save new state
+        self._save_index_state(new_state)
+        
+        return files_to_process, files_to_remove
+    
+    def smart_index_documents(self):
+        """Intelligently index only new or modified documents."""
+        print("🔍 Checking for document changes...")
+        
+        files_to_process, files_to_remove = self._get_files_to_process()
+        
+        # Remove chunks for deleted files
+        if files_to_remove:
+            print(f"🗑️ Removing {len(files_to_remove)} deleted files from index...")
+            for file_key in files_to_remove:
+                try:
+                    # Build full path to match against source metadata
+                    full_path = str(self.documents_dir / file_key)
+                    
+                    # Remove all chunks with this exact source path
+                    results = self.collection.get(
+                        where={"source": full_path}
+                    )
+                    if results['ids']:
+                        self.collection.delete(ids=results['ids'])
+                        print(f"   Removed {len(results['ids'])} chunks for: {file_key}")
+                    else:
+                        print(f"   No chunks found for: {file_key}")
+                except Exception as e:
+                    print(f"   Warning: Could not remove chunks for {file_key}: {e}")
+        
+        # Process new/modified files
+        if files_to_process:
+            print(f"📝 Processing {len(files_to_process)} new/modified files...")
+            self._index_new_documents(files_to_process)
+        elif not files_to_remove:
+            print("✅ No changes detected - index is up to date!")
+        
+        final_count = self.collection.count()
+        print(f"📊 Total chunks in database: {final_count}")
+        
+        return len(files_to_process) > 0 or len(files_to_remove) > 0
+    
+    def _index_new_documents(self, documents: List[Document]):
+        """Index new documents without clearing existing ones."""
+        if not documents:
+            return
+            
+        print(f"Indexing {len(documents)} documents...")
+        
+        # Remove existing chunks for these documents first
+        for doc in documents:
+            try:
+                source_path = doc.metadata['source']
+                results = self.collection.get(
+                    where={"source": source_path}
+                )
+                if results['ids']:
+                    self.collection.delete(ids=results['ids'])
+                    print(f"   Removed old chunks for: {source_path}")
+            except Exception as e:
+                print(f"   Warning: Could not remove old chunks for {doc.metadata['source']}: {e}")
+        
+        # Process new chunks
+        all_chunks = []
+        for doc in documents:
+            chunks = self.text_splitter.split_text(doc.page_content)
+            for i, chunk in enumerate(chunks):
+                all_chunks.append({
+                    'id': f"{doc.metadata['source']}_chunk_{i}",
+                    'content': chunk,
+                    'metadata': doc.metadata
+                })
+        
+        if not all_chunks:
+            print("No chunks to index")
+            return
+            
+        print(f"Processing {len(all_chunks)} new chunks...")
+        
+        # Process in batches
+        batch_size = 1000
+        total_batches = (len(all_chunks) + batch_size - 1) // batch_size
+        
+        for batch_idx in range(total_batches):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, len(all_chunks))
+            batch_chunks = all_chunks[start_idx:end_idx]
+            
+            print(f"   Processing batch {batch_idx + 1}/{total_batches} ({len(batch_chunks)} chunks)...")
+            
+            # Generate embeddings for this batch
+            contents = [chunk['content'] for chunk in batch_chunks]
+            try:
+                embeddings = self.embedding_model.encode(contents).tolist()
+            except Exception as e:
+                print(f"   Error generating embeddings for batch {batch_idx + 1}: {e}")
+                continue
+            
+            # Add batch to ChromaDB
+            try:
+                self.collection.add(
+                    ids=[chunk['id'] for chunk in batch_chunks],
+                    documents=contents,
+                    embeddings=embeddings,
+                    metadatas=[chunk['metadata'] for chunk in batch_chunks]
+                )
+                print(f"   ✅ Batch {batch_idx + 1} indexed successfully")
+            except Exception as e:
+                print(f"   ❌ Error indexing batch {batch_idx + 1}: {e}")
+                continue
+        
+        print(f"✅ Indexing complete!")
     
     def index_documents(self, documents: List[Document]):
         """Index documents into ChromaDB with batch processing."""

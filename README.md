@@ -26,10 +26,20 @@ git clone https://github.com/yourusername/knowledge-rag.git
 cd knowledge-rag
 ```
 
-### 2. One-Command Setup & Launch
+### 2. Prerequisites Setup
+Before using the quick launch scripts, ensure you have:
 ```bash
-# This handles everything: dependencies, models, and launches the UI
-./start_ui.sh
+# Install Ollama
+brew install ollama
+brew services start ollama
+
+# Create virtual environment and install dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Download at least one AI model
+ollama pull phi3:mini
 ```
 
 ### 3. Quick Launch Scripts
@@ -39,14 +49,18 @@ cd knowledge-rag
 
 # Web UI (browser interface) - auto-initializes RAG system
 ./run_ui
+
+# Legacy script (terminal UI only)
+./start_ui.sh
 ```
 
-**That's it!** The script will:
-- Install Ollama if needed
-- Create virtual environment
-- Install Python dependencies  
-- Download a default AI model
-- Launch the Terminal UI
+**The scripts will:**
+- Check if Ollama is running (start it if needed)
+- Activate the virtual environment
+- Check for required dependencies
+- Download phi3:mini model if no models exist
+- Auto-initialize the RAG system
+- Launch the chosen UI
 
 ## 🛠️ Manual Installation
 

@@ -62,28 +62,40 @@ else
     echo -e "${GREEN}✅ Found $MODELS model(s)${NC}"
 fi
 
-# Initialize RAG system (index documents if needed)
+# Initialize RAG system (smart indexing)
 echo -e "${BLUE}🔄 Initializing RAG system...${NC}"
 python -c "
-from knowledge_rag import KnowledgeRAG
-import os
-
-# Initialize RAG system
-rag = KnowledgeRAG(documents_dir='documents', model_name='phi3:mini')
-
-# Check if indexing is needed
-if rag.collection.count() == 0:
-    print('📚 No documents indexed yet. Loading and indexing documents...')
-    documents = rag.load_documents()
-    if documents:
-        print(f'Found {len(documents)} documents to index.')
-        rag.index_documents(documents)
-        print(f'✅ Indexing complete! {rag.collection.count()} chunks indexed.')
+try:
+    from knowledge_rag import KnowledgeRAG
+    import os
+    import sys
+    
+    # Initialize RAG system
+    rag = KnowledgeRAG(documents_dir='documents', model_name='phi3:mini')
+    
+    # Check if we have any documents at all
+    if rag.collection.count() == 0:
+        print('📚 No documents indexed yet. Loading and indexing documents...')
+        documents = rag.load_documents()
+        if documents:
+            print(f'Found {len(documents)} documents to index.')
+            rag.index_documents(documents)
+            print(f'✅ Indexing complete! {rag.collection.count()} chunks indexed.')
+        else:
+            print('⚠️ No documents found. Add files to the documents/ directory.')
     else:
-        print('⚠️ No documents found. Add files to the documents/ directory.')
-else:
-    print(f'✅ RAG system ready! {rag.collection.count()} chunks already indexed.')
-"
+        # Use smart indexing to only process changed files
+        print(f'📊 Current database: {rag.collection.count()} chunks')
+        changes_made = rag.smart_index_documents()
+        if changes_made:
+            print(f'✅ RAG system updated! {rag.collection.count()} chunks total.')
+        else:
+            print('✅ RAG system ready - no changes needed!')
+except Exception as e:
+    print(f'❌ Error initializing RAG system: {e}')
+    print('📝 Will try to initialize during UI startup instead.')
+    sys.exit(0)  # Don't fail the script, just continue
+" || echo -e "${YELLOW}⚠️ RAG initialization failed, will retry in UI${NC}"
 
 # Start the Terminal UI
 echo -e "${GREEN}🚀 Launching Terminal UI...${NC}"
